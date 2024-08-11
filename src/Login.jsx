@@ -9,7 +9,7 @@ import landingImage from './landing.jpeg';
 // npm install crypto-js
 // npm install react-icons
 
-const LOGIN_URL = "http://localhost:4000/signin";
+const LOGIN_URL = "http://localhost:4000/users/login";
 const SECRET_KEY = process.env.REACT_APP_SECRET_KEY;
 console.log("Secret key :", SECRET_KEY)
 
@@ -37,11 +37,7 @@ const Login = ({ setLoggedIn }) => {
         setError("Session expired. Please login again.");
       } else {
         setLoggedIn(true); // Set logged in state
-        if (parsedUserData.role === 'doctor') {
-          navigate('/doctor-dashboard');
-        } else if (parsedUserData.role === 'patient') {
-          navigate('/patient-dashboard');
-        }
+        navigate('/account');
       }
     }
   }, [navigate, setLoggedIn]);
@@ -99,7 +95,8 @@ const Login = ({ setLoggedIn }) => {
       Object.entries(userDetails).forEach(([key, value]) => console.log(`${key} : ${JSON.stringify(value)}`))
 
       localStorage.setItem("userData", JSON.stringify(userDetails));
-      localStorage.setItem("accessToken", result.accessToken);
+      localStorage.setItem("accessToken", JSON.stringify(result.accessToken));
+      navigate('/account');
       setLoggedIn(true); // Set logged in state
 
     } catch (error) {

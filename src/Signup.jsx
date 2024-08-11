@@ -9,7 +9,7 @@ import landingImage from './landing.jpeg';
 // npm install crypto-js
 // npm install react-icons
 
-const SIGNUP_URL = "http://localhost:4000/signup";
+const SIGNUP_URL = "http://localhost:4000/users/signup";
 const SECRET_KEY = process.env.REACT_APP_SECRET_KEY;
 
 console.log("Secret Key :", SECRET_KEY);
@@ -225,7 +225,9 @@ const Signup = ({ setLoggedIn }) => {
           <div className="text-green-500 mt-2 text-sm text-center">{signupMessage}</div>
         )}
         {loading && (
-          <div className="text-gray-500 mt-2 text-sm text-center">Loading...</div>
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-50">
+            <div className="animate-spin rounded-full h-20 w-20 border-b-4 border-red-700"></div>
+          </div>
         )}
       </div>
     </div>
