@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import CryptoJS from 'crypto-js';
 
-const POST_ACCOUNT_URL = "http://localhost:4000/users/account"; 
-const UPDATE_PROXY_ID_URL = "http://localhost:4000/users/update-proxy";
-const UPDATE_DATA_CENTRE_ID_URL ="http://localhost:4000/users/update-datacentre";
+const POST_ACCOUNT_URL = "http://localhost:4001/users/account"; 
+const UPDATE_PROXY_ID_URL = "http://localhost:4001/users/update-proxy";
+const UPDATE_DATA_CENTRE_ID_URL ="http://localhost:4001/users/update-datacentre";
+const MPESA_URL = "http://localhost:4001/users/mpesa";
 
 const PostAccount = () => {
   const [balance, setBalance] = useState('');
@@ -16,7 +18,11 @@ const PostAccount = () => {
   const [token, setToken] = useState("");
   const [newProxyId, setNewProxyId] = useState("");
   const [newDataCentreId, setNewDatacentreId] = useState("");
+  const [mpesaNumber, setMpesaNumber] = useState(null);
+  const [amount, setAmount] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const accessToken = localStorage.getItem("accessToken");
@@ -89,7 +95,7 @@ const PostAccount = () => {
         setLoading(false);
     }
   };
-  const encryption = (data) =>{
+  const encryption = async data =>{
     console.log("Data: ", data);
     const dataStr = JSON.stringify(data);
     const iv = CryptoJS.lib.WordArray.random(16).toString(CryptoJS.enc.Hex);
@@ -117,7 +123,7 @@ const PostAccount = () => {
         newDataCentreId: newDataCentreId
     }
 
-    const data = encryption(newData);
+    const data = await encryption(newData);
     Object.entries(data).forEach(([key, value]) => console.log(`${key} : ${JSON.stringify(value)}`));
 
     try {
@@ -152,7 +158,7 @@ const PostAccount = () => {
   const updateProxy = async () =>{
     setLoading(true);
     let data;
-    if (newProxyId) data = encryption(newProxyId);
+    if (newProxyId) data = await encryption(newProxyId);
     data = encryption(newProxyId);
     Object.entries(data).forEach(([key, value]) => console.log(`${key} : ${JSON.stringify(value)}`));
 
@@ -184,10 +190,73 @@ const PostAccount = () => {
         setLoading(false);
     }
 
+  };
+
+  const purchaseProxy = async () =>{
+    setLoading(true);
+    let payload;
+
+    const data = {
+      userId: userId,
+      phoneNumber:mpesaNumber,
+      amount:amount
+    }
+
+    Object.entries(data).forEach(([key, value]) => console.log(`${key} : ${value}`));
+    if (data) payload = await encryption(data);
+
+    try {
+      const response = await fetch(MPESA_URL, {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+      console.log("Result: ", result);
+
+      if (result.success){
+        Object.entries(result.data).forEach(([key, value]) => console.log(`${key} : ${JSON.stringify(value)}`));
+        setSuccess(result.message);
+        setTimeout(() => setSuccess(""), 5000);
+
+      }else{
+        setError(result.message);
+        setTimeout(() => setError(''), 5000);
+        return;
+      }
+      
+    } catch (error) {
+      setError(`There was an error. Error: ${error}`);
+      setTimeout(() => setError(''), 5000);
+      return;
+    }finally{
+      setLoading(false);
+    }
+
   }
+
+  const logout = () => {
+    // Clear the access token and user data from localStorage
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("userData");
+
+    // Navigate to the login page
+    navigate('/login');
+  };
 
   return (
     <div className="p-8 max-w-md mx-auto bg-white rounded shadow-md">
+      <button
+        type="button"
+        className="bg-red-500 text-white p-2 rounded mt-4"
+        onClick={logout}
+      >
+        Logout
+      </button>
       <h2 className="text-2xl font-bold mb-4">Post Account Data</h2>
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
@@ -277,6 +346,33 @@ const PostAccount = () => {
           onClick={updateDataCentre}
         >
           Update
+        </button>
+        <div className="mb-4">
+          <label className="block text-gray-700">Mpesa Number</label>
+          <input
+            type="number"
+            value={mpesaNumber}
+            onChange={(e) => setMpesaNumber(e.target.value)}
+            className="w-full p-2 border rounded"
+            placeholder="Mpesa number 254748800714"
+            required
+          />
+          <label className="block text-gray-700">Amount</label>
+          <input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="w-full p-2 border rounded"
+            placeholder="Amount"
+            required
+          />
+        </div>
+        <button
+          type="submit"
+          className="bg-blue-500 text-white p-2 rounded"
+          onClick={purchaseProxy}
+        >
+          Mpesa
         </button>
         {loading && (
             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-50">

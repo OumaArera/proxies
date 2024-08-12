@@ -9,7 +9,7 @@ import landingImage from './landing.jpeg';
 // npm install crypto-js
 // npm install react-icons
 
-const SIGNUP_URL = "http://localhost:4000/users/signup";
+const SIGNUP_URL = "http://localhost:4001/users/signup";
 const SECRET_KEY = process.env.REACT_APP_SECRET_KEY;
 
 console.log("Secret Key :", SECRET_KEY);
