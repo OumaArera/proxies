@@ -6,6 +6,7 @@ const POST_ACCOUNT_URL = "http://localhost:4001/users/account";
 const UPDATE_PROXY_ID_URL = "http://localhost:4001/users/update-proxy";
 const UPDATE_DATA_CENTRE_ID_URL ="http://localhost:4001/users/update-datacentre";
 const MPESA_URL = "http://localhost:4001/users/mpesa";
+const CRYPTOMUS_URL = "https://537a-105-163-156-91.ngrok-free.app/users/cryptomus";
 
 const PostAccount = () => {
   const [balance, setBalance] = useState('');
@@ -21,6 +22,7 @@ const PostAccount = () => {
   const [mpesaNumber, setMpesaNumber] = useState(null);
   const [amount, setAmount] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [amountForCrypto, setAmountForCrypto] = useState(null);
 
   const navigate = useNavigate();
 
@@ -235,9 +237,75 @@ const PostAccount = () => {
       return;
     }finally{
       setLoading(false);
+    };
+
+  };
+
+  const handleAmountChange = (e) => {
+    // Parse the input value as a float
+    let value = parseFloat(e.target.value);
+    
+    // Check if the value is a valid number
+    if (!isNaN(value)) {
+      // Convert the number to a string with 8 decimal places
+      value = value.toFixed(8);
+    } else {
+      // If input is invalid, keep it as an empty string
+      value = '';
     }
 
-  }
+    // Update the state with the formatted value
+    setAmountForCrypto(value);
+  };
+
+  const payCrypto = async () => {
+    setLoading(true);
+    let payload;
+  
+    const data = {
+      userId: userId,
+      amount: amountForCrypto,
+      currency: "USD"
+    };
+  
+    Object.entries(data).forEach(([key, value]) => console.log(`${key} : ${value}`));
+    if (data) payload = await encryption(data);
+  
+    try {
+      const response = await fetch(CRYPTOMUS_URL, {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      const result = await response.json();
+  
+      if (result.success) {
+        Object.entries(result.data).forEach(([key, value]) => console.log(`${key} : ${JSON.stringify(value)}`));
+        
+        
+        if (result.data.result.url) {
+          // Open the URL in a new tab
+          console.log("URL",result.data.result.url)
+          window.open(result.data.result.url, '_blank');
+        }
+      } else {
+        setError(result.message);
+        setTimeout(() => setError(''), 5000);
+        return;
+      }
+      
+    } catch (error) {
+      setError(`There was an error. Error: ${error}`);
+      setTimeout(() => setError(''), 5000);
+      return;
+    } finally {
+      setLoading(false);
+    };
+  };
+  
 
   const logout = () => {
     // Clear the access token and user data from localStorage
@@ -373,6 +441,25 @@ const PostAccount = () => {
           onClick={purchaseProxy}
         >
           Mpesa
+        </button>
+        <div className="mb-4">
+          <label className="block text-gray-700">Crypto amount</label>
+          <input
+            type="number"
+            value={amountForCrypto}
+            onChange={handleAmountChange}
+            className="w-full p-2 border rounded"
+            placeholder="USDT amount eg 3"
+            required
+          />
+          
+        </div>
+        <button
+          type="submit"
+          className="bg-blue-500 text-white p-2 rounded"
+          onClick={payCrypto}
+        >
+          Crypto
         </button>
         {loading && (
             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-50">
